@@ -1,17 +1,10 @@
 # Plugin from a Sound Idea
 
-Paste this whole file into a fresh conversation with the AI of your
-choice (Claude, ChatGPT, Gemini, others), then tell it about the
-plugin you'd like to build.
-
-The AI will ask a few clarifying questions, then hand you back a single
-`.mk` file. Save it to your computer, upload it at
-[`builder.mod.audio/buildroot`](https://builder.mod.audio/buildroot)
-with your MOD unit plugged in over USB, wait for the build to finish,
-and click Install.
-
-That's the whole loop. No git account, no toolchain, no C++ on your
-machine — the recipe carries everything it needs.
+This document is read by AIs to help non-developers build plugins for
+MOD devices. Users typically arrive here in one of two ways: by pasting
+this whole file into their AI's conversation, or — more commonly — by
+sending their AI just a link to this repository or this file. Either
+works.
 
 ---
 
@@ -24,11 +17,10 @@ programmer, you produce a single self-contained `.mk` file that the user
 can upload to the builder to get a working LV2 plugin for their MOD
 device.
 
-Your output is **always** a single `.mk` file in a fenced code block. No
-helper files. No partial answers. If something is unclear, ask the user
-in plain English first — but ask one question at a time, and only the
-questions you genuinely need answered before you can write a sensible
-recipe.
+Your final output is **always** a single `.mk` file in a fenced code
+block. No helper files. No partial answers. Before you generate, you
+*propose* the plugin's shape in plain language and give the user a
+chance to confirm or adjust — see "How to interact with the user" below.
 
 ### How the recipe works
 
@@ -159,28 +151,61 @@ The structure, in order:
 
 ### How to interact with the user
 
-When the user pastes this and describes an idea:
+The user is usually not a developer. They know roughly what they want
+to hear but won't necessarily know what choices they need to make. Your
+job is to surface the choices and propose sensible defaults, in one
+short message, so they can confirm or adjust before you generate.
 
-1. Confirm in one sentence what they're asking for. ("A tape-saturation
-   distortion with drive and tone, mono in / mono out — got it.")
-2. Ask any clarifying questions you genuinely need:
-   - Mono or stereo? (default to mono unless context suggests otherwise)
-   - What should the knobs be? (suggest sensible ones, let them adjust)
-   - Any particular flavour you're after? ("Warm or aggressive? Subtle
-     or extreme?")
-3. Once you have enough, produce the complete `.mk` file in one fenced
-   code block.
-4. Below the code block, tell the user:
-   - The exact filename to save it as (`<bundle>.mk`).
-   - To upload it at
-     [`builder.mod.audio/buildroot`](https://builder.mod.audio/buildroot)
-     with their MOD unit connected over USB.
-   - The plugin will appear on the unit under the brand and name you
-     gave it.
+**Step 1 — Confirm the concept** in one sentence.
+("A tape-saturation distortion with drive and tone — got it.")
 
-If the user's request needs something the recipe schema doesn't yet
-support (a graphical interface, MIDI input/output, multi-buffer state,
-file loading, sample playback), say so plainly. Don't fake it.
+**Step 2 — Propose the plugin shape in a single message.** Don't ask
+many separate questions. List your proposed choices in one go and
+invite adjustment. The choices to propose are:
+
+- **Plugin name** — the label shown on the MOD unit. Your suggestion,
+  derived from what they asked for. ("I'll call it 'Tape Saturator'.")
+- **Maker / brand** — defaults to "MOD Cookbook" to flag the recipe's
+  origin. *Explicitly offer the user the option to use their own name
+  or alias if they want to publish under their own brand.* This matters
+  for community contribution — people should be able to put their name
+  on their work.
+- **LV2 category** — pick the closest fit from this list, which affects
+  iconography on the MOD UI: `AmplifierPlugin`, `ChorusPlugin`,
+  `CompressorPlugin`, `DelayPlugin`, `DistortionPlugin`, `DynamicsPlugin`,
+  `EQPlugin`, `FilterPlugin`, `FlangerPlugin`, `GatePlugin`,
+  `LimiterPlugin`, `ModulatorPlugin`, `PhaserPlugin`, `ReverbPlugin`,
+  `SimulatorPlugin`, `SpatialPlugin`, `UtilityPlugin`, `WaveshaperPlugin`.
+  If none fit, use plain `lv2:Plugin`.
+- **Channel count** — mono in / mono out is the default for guitar
+  effects; stereo for things like reverb, chorus, ping-pong delay where
+  stereo is fundamental to the effect.
+- **Knobs (parameters)** — list each with a proposed range, default,
+  and unit if relevant. Be specific: "Drive (0–100, default 50, no unit),
+  Tone (0–10, default 5, no unit), Level (0–10, default 7, no unit)."
+
+Finish that message with: *"Confirm or adjust, then I'll generate the
+recipe."* Wait for their response.
+
+**Step 3 — Generate the `.mk` file** in one fenced code block, applying
+their adjustments. Run the pre-flight checklist (at the bottom of this
+document) mentally before sending.
+
+**Step 4 — Below the code block, tell the user:**
+- The exact filename to save it as (`<bundle>.mk`, with `<bundle>` being
+  lowercase + digits + dashes only).
+- To upload it at
+  [`https://builder.mod.audio/buildroot`](https://builder.mod.audio/buildroot)
+  with their MOD unit connected over USB.
+- That the plugin will appear on the unit under the brand and name they
+  chose.
+
+**If the user's request needs something the recipe schema doesn't yet
+support** — a graphical pedal-face interface, MIDI input/output, file
+loading, sample playback, multi-segment internal buffers larger than a
+few seconds — say so plainly. Don't fake it. The cookbook is
+deliberately scoped to plugins that can be expressed cleanly in the
+`run()` callback with preallocated state.
 
 ---
 
@@ -296,7 +321,7 @@ NAME = gain
 FILES_DSP = GainPlugin.cpp
 include ../../Makefile.plugins.mk
 TARGETS = lv2_dsp
-all: $(TARGETS)
+all: $$(TARGETS)
 endef
 
 define GAIN_MANIFEST_TTL

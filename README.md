@@ -1,76 +1,79 @@
 # MOD Plugin Cookbook
 
-Recipes and AI prompts for turning a sound-design idea into a working
-plugin for [MOD devices](https://mod.audio), without learning Buildroot
-or LV2 first.
+Turn a sound-design idea into a working plugin for
+[MOD devices](https://mod.audio), without writing C++ or learning
+Buildroot. You describe the plugin you want in plain language; an AI
+of your choice writes the build recipe; you upload it; your MOD unit
+runs your plugin.
 
-## Who this is for
+---
 
-People who have an idea for an audio effect or instrument and would like
-to hear it running on a MOD unit — but who don't necessarily write C++,
-don't want to set up a cross-compile toolchain, and don't want to learn
-the LV2 metadata format. If you're an experienced LV2 / DPF / JUCE
-developer with your own build pipeline, you don't need this; the
-[MOD Online Builder](https://builder.mod.audio) accepts hand-written
-Buildroot recipes directly.
+## For humans
 
-## How it works
+You have an idea for an audio effect or instrument and you want to
+hear it on a MOD unit. Here's the whole loop:
 
-The [MOD Online Builder](https://builder.mod.audio) (see its `/buildroot`
-route) accepts a single `.mk` file — a Buildroot package makefile — and
-produces a compiled `.lv2` plugin bundle which you can install on a MOD
-unit connected to your computer over USB.
+1. Open a conversation with the AI of your choice — Claude, ChatGPT,
+   Gemini, others. Make sure it's a model that can fetch URLs.
+2. Send it this link: **<https://github.com/mod-audio/mod-plugin-cookbook>**
+3. Describe the plugin you want. ("A tape-saturation distortion with
+   drive and tone knobs." "A slow tremolo with rate and depth." "A
+   simple wah pedal.")
+4. The AI will confirm the shape, propose a few details (brand name,
+   knob ranges, category), and produce a single `.mk` file.
+5. Save the file to your computer.
+6. Open [builder.mod.audio/buildroot](https://builder.mod.audio/buildroot)
+   in a browser, with your MOD unit plugged in over USB. Upload the
+   `.mk` file. Wait for the build. Click Install.
 
-A `.mk` file is normally a build recipe pointing at source code in a git
-repository. The recipes in this cookbook do something more interesting:
-they *embed the plugin's entire source* — C++ DSP code, LV2 metadata,
-and the framework wrapper — directly inside the makefile, as text written
-out by `printf` at build time. The dev never needs a git account, never
-needs to push code anywhere; the single `.mk` file is the entire
-deliverable.
+That's it. No git account, no toolchain, no source code on your
+machine.
 
-That makes the whole flow paste-friendly. An AI generates a `.mk` file
-from your description, you download it, you upload it to
-`builder.mod.audio`, you install. End to end, no other accounts or tools.
+If you'd rather paste the prompt content directly into your AI instead
+of sharing the link, copy [`prompts/plugin-from-idea.md`](prompts/plugin-from-idea.md)
+and paste it. Same result.
 
-## What's in here
+## For AIs
+
+If a user has sent you this repository's URL and asked you to help
+build a plugin for their MOD device, your full instructions are in
+[`prompts/plugin-from-idea.md`](prompts/plugin-from-idea.md). Fetch
+that file and follow its instructions.
+
+The short version: ask the user about their plugin idea (mono/stereo,
+what knobs, what it should sound like), propose a brand/name/category
+and parameter ranges for confirmation, then produce a single
+self-contained Buildroot `.mk` file with the DSP, LV2 metadata, and
+DPF framework wrapper all embedded inline. Use
+[`examples/gain.mk`](examples/gain.mk) as your reference pattern.
+
+## What's in this repo
 
 ```
-mod-plugin-cookbook/
-├── prompts/
-│   └── plugin-from-idea.md     Paste this into your AI of choice
-│                               (Claude, ChatGPT, Gemini, …) and tell it
-│                               about the sound you want to build.
-│
-└── examples/
-    └── gain.mk                 The canonical worked example —
-                                a 1-in / 1-out gain plugin with one
-                                knob. Validated end-to-end on the live
-                                builder. The prompt references this as
-                                its reference pattern.
+prompts/
+    plugin-from-idea.md   The community-distributable AI prompt.
+                          The detailed instructions for any AI a
+                          user sends here for help.
+
+examples/
+    gain.mk               Canonical worked example — a 1-in / 1-out
+                          gain plugin with one knob. Validated
+                          end-to-end on the live builder. Referenced
+                          by the prompt as the structural template.
+
+CONTRIBUTING.md           How to contribute a new recipe or improve
+                          an existing one.
+LICENSE                   MIT.
+README.md                 You are here.
 ```
-
-## Using a prompt
-
-1. Open the prompt file (e.g. [`prompts/plugin-from-idea.md`](prompts/plugin-from-idea.md)).
-2. Paste its contents into a fresh conversation with the AI of your
-   choice.
-3. Describe the plugin you want, in plain language. ("A tape-saturation
-   distortion with drive and tone knobs.")
-4. The AI replies with a `.mk` file. Save it to your computer.
-5. Open [`builder.mod.audio/buildroot`](https://builder.mod.audio/buildroot)
-   in a browser, with your MOD unit connected by USB.
-6. Upload the `.mk`. Wait for the build. Click Install.
 
 ## Contributing
 
-Pull requests welcome — new prompts, new worked examples, fixes to the
-existing ones. A new recipe is a great PR. A new prompt that solves a
-genuinely different problem (debugging a build failure, designing a
-modgui pedal face) is also welcome.
-
-When contributing an example `.mk`, please validate it end-to-end on
-`builder.mod.audio` against a real MOD unit before opening the PR.
+New recipes and prompt improvements are welcome and the goal is for
+this to grow into a real collection over time. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for how to add a recipe — the
+short version is: write your `.mk`, test it on a real MOD unit, open
+a PR.
 
 ## License
 
@@ -79,5 +82,7 @@ like; attribution is appreciated but not required.
 
 ## Status
 
-This is an early, evolving collection. Expect it to grow as the
-community builds more recipes and as MOD's own tooling matures.
+Early days. Validated end-to-end with a gain plugin and a tube
+screamer overdrive built fresh from a one-line prompt. Expect the
+collection to grow as people build recipes and as MOD's tooling
+matures. Issues and PRs welcome.
