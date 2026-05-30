@@ -89,54 +89,57 @@ examples/
 
 ## Current state (last updated 2026-05-30)
 
-**Validated end-to-end on real hardware**
-- `examples/gain.mk` — 1-in / 1-out gain plugin. Built, installed,
-  works on Dwarf.
-- A tube screamer overdrive produced by Claude Chat from a one-line
-  prompt request. Built, installed, behaves on Dwarf — though it
-  needs ~+20 dB of pre-gain to actually saturate, because the AI
-  didn't know what nominal signal level a MOD unit presents at its
-  input. This identified the largest known gap (see below).
+**Validated end-to-end on real hardware, across two AI providers and
+multiple plugin shapes**
+
+- `examples/gain.mk` — 1-in / 1-out gain. Hand-written reference,
+  built and installed on Dwarf.
+- Tube Screamer overdrive — Claude Chat, one-line prompt. Built and
+  installed on Dwarf. Required ~+20 dB pre-gain to saturate (see open
+  gap 1 below).
+- `examples/ce2-chorus.mk` — Claude Chat, one-line prompt, contributed
+  by Gianfranco. Demonstrates time-based DSP (delay line, LFO,
+  fractional interpolation). Built and installed on Dwarf.
+- Centre Filter — ChatGPT, single-knob bidirectional filter (LP left
+  of centre, HP right). Built and installed; first cross-AI validation.
+  Notable DSP: logarithmic frequency mapping, coefficient smoothing,
+  state continuity across mode switches.
+
+The fetch-by-URL workflow is working: user sends just the repo root
+URL, the AI follows the README's "For AIs" section, fetches the prompt
+and (typically) the example, produces a compliant recipe. ChatGPT
+initially planned to generate a regular LV2 source tree but corrected
+itself after reading the cookbook — meaningful confirmation that the
+docs are doing real work.
 
 **Open gaps tracked here, in rough priority order**
 
-1. **MOD device signal-level guidance.** The prompt has no information
-   about what dBFS represents in practice at a MOD unit's input.
-   Saturation, distortion, dynamics, level-meter, compressor, and
-   anything where absolute signal level matters all need this. Gain
-   pedals don't care. Asked Gianfranco for the actual numbers
-   (nominal instrument level, line-vs-instrument distinction,
+1. **MOD device signal-level guidance.** Still the biggest known gap.
+   The prompt has no information about what dBFS represents in practice
+   at a MOD unit's input. Saturation, distortion, dynamics, level-meter,
+   compressor, and anything where absolute signal level matters all
+   need this. Gain pedals don't care. Asked Gianfranco for the actual
+   numbers (nominal instrument level, line-vs-instrument distinction,
    headroom convention for output, whether it differs across Dwarf /
    Duo / DuoX / Anagram); he doesn't have them at hand yet. Add to
    the prompt as a "DSP design notes for MOD devices" section once
    we have the numbers.
 
-2. **`$(TARGETS)` escape bug — fixed.** Originally our gain.mk had
-   `all: $(TARGETS)` inside the DPF Makefile define block, which
-   expanded to empty at export time. Claude Chat's tube-screamer
-   correctly used `$$(TARGETS)`. Both the standalone gain.mk and the
-   inlined version in the prompt have been corrected.
+2. **More example shapes still valuable.** Two examples (gain,
+   ce2-chorus) cover callback-only and delay-based. Future additions
+   that would teach the AI new patterns: a one-pole filter (covers
+   filter coefficient math), a stereo plugin (covers multi-channel
+   processing), an envelope follower / dynamics plugin (covers
+   per-sample envelope tracking and gain reduction). The centre-filter
+   from ChatGPT could be polished into an example if Gianfranco wants
+   to attribute it to himself or get permission from the AI's output
+   considered uncontroversial enough to include as cookbook material.
 
-3. **Interaction pattern strengthened.** Originally the prompt told
-   the AI to "ask any clarifying questions you genuinely need" —
-   vague enough that the AI judged everything was clear and defaulted
-   to brand=MOD Cookbook, knob ranges of its own choice, etc. Now the
-   prompt instructs a structured "propose, then confirm" pass before
-   generation: AI surfaces plugin name, brand (offering the user's
-   own as an option), LV2 category, channel count, and knob ranges
-   in one short message; user adjusts; AI generates.
-
-4. **More recipes.** One canonical example (gain) is enough to
-   demonstrate the pattern but not to teach the AI variation. Adding
-   2–3 more shapes — a delay (with a circular buffer), a tremolo
-   (with an LFO and time-dependent state), maybe a one-pole filter
-   — would give the AI more to interpolate from when handling
-   creative requests.
-
-5. **Test the new interaction pattern.** Now that the prompt asks the
-   AI to propose-then-confirm, we should test with a fresh
-   conversation to verify the AI actually does that pass and the UX
-   feels right.
+3. **Propose-vs-proceed UX.** Tested twice now — Claude Chat's
+   tube-screamer and chorus both proceeded directly without ceremonial
+   confirmation. ChatGPT did the same. The prompt has been loosened
+   to explicitly endorse this for already-specific requests, reserving
+   propose-and-wait for genuinely open ones.
 
 ## Working rhythm
 

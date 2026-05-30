@@ -57,9 +57,16 @@ prompts/
 
 examples/
     gain.mk               Canonical worked example — a 1-in / 1-out
-                          gain plugin with one knob. Validated
-                          end-to-end on the live builder. Referenced
-                          by the prompt as the structural template.
+                          gain plugin with one knob. The structural
+                          template the prompt refers to. Validated
+                          end-to-end on the live builder.
+
+    ce2-chorus.mk         Boss CE-2-inspired chorus, contributed by
+                          Gianfranco Ceccolini. Demonstrates the
+                          patterns for time-based effects: circular
+                          delay buffer, sinusoidal LFO, fractional
+                          read interpolation, activate() resetting
+                          state on (re)start.
 
 CONTRIBUTING.md           How to contribute a new recipe or improve
                           an existing one.
@@ -82,7 +89,9 @@ like; attribution is appreciated but not required.
 
 ## Status
 
-Early days. Validated end-to-end with a gain plugin and a tube
-screamer overdrive built fresh from a one-line prompt. Expect the
-collection to grow as people build recipes and as MOD's tooling
-matures. Issues and PRs welcome.
+Early days but the foundation is real. Validated end-to-end across
+multiple plugin shapes and AI providers: a gain plugin, a Tube
+Screamer overdrive, a CE-2-inspired chorus (all via Claude), and a
+one-knob bidirectional filter (via ChatGPT). The recipe pattern works
+across AIs and across DSP categories. Expect the collection to grow.
+Issues and PRs welcome.

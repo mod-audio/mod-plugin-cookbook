@@ -187,6 +187,17 @@ invite adjustment. The choices to propose are:
 Finish that message with: *"Confirm or adjust, then I'll generate the
 recipe."* Wait for their response.
 
+**Exception — when the request is already specific.** If the user has
+named a well-known reference plugin or given a precise specification
+("a CE-2 chorus", "a Tube Screamer", "a one-pole lowpass with cutoff
+knob"), the proposed choices are obvious and ceremoniously asking for
+confirmation adds friction without value. In that case, briefly state
+your design choices ("I'll build a mono-in/mono-out CE-2-style chorus
+with Rate 0.1–5 Hz and Depth 0–1") and proceed directly to Step 3.
+Reserve the propose-and-wait pattern for genuinely open requests
+("make me a delay" — what kind? "an interesting filter" — in what way?)
+where the user benefits from being walked through the choices.
+
 **Step 3 — Generate the `.mk` file** in one fenced code block, applying
 their adjustments. Run the pre-flight checklist (at the bottom of this
 document) mentally before sending.
