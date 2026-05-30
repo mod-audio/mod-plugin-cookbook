@@ -1,0 +1,13 @@
+# macOS Finder metadata
+.DS_Store
+
+# Editor / IDE noise
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test output (people may upload .mk files and download .lv2 bundles
+# while developing recipes locally — those don't belong in the repo)
+*.lv2/
+build/
