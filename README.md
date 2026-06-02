@@ -6,12 +6,27 @@ Buildroot. You describe the plugin you want in plain language; an AI
 of your choice writes the build recipe; you upload it; your MOD unit
 runs your plugin.
 
+There are two paths through the cookbook, depending on what you're
+trying to do:
+
+- **Prototype** — fastest way to hear an idea. The AI produces one
+  self-contained `.mk` file. You upload it, install, listen. No git
+  account, no source files on your machine.
+- **Project** — for when you want to keep iterating on the plugin,
+  add a custom pedal face later, use multiple source files, or
+  eventually submit it to the MOD store. The AI helps you set up a
+  small repository you own and maintain.
+
+If you're not sure which fits, start with **prototype**. You can
+always graduate a prototype into a project later — the project
+prompt explicitly supports that conversion.
+
 ---
 
 ## For humans
 
 You have an idea for an audio effect or instrument and you want to
-hear it on a MOD unit. Here's the whole loop:
+hear it on a MOD unit. Here's the prototype loop:
 
 1. Open a conversation with the AI of your choice — Claude, ChatGPT,
    Gemini, others. Make sure it's a model that can fetch URLs.
@@ -29,58 +44,74 @@ hear it on a MOD unit. Here's the whole loop:
 That's it. No git account, no toolchain, no source code on your
 machine.
 
-If you'd rather paste the prompt content directly into your AI instead
-of sharing the link, copy [`prompts/plugin-from-idea.md`](prompts/plugin-from-idea.md)
-and paste it. Same result.
+If you want to start a **project** instead (or convert an existing
+prototype into one), tell the AI explicitly — say "I want this as a
+project I can iterate on" or "turn this prototype into a project."
+The AI will route you to the project workflow, which assumes you
+have (or are willing to create) a git host like GitHub.
+
+If you'd rather paste the prompt content directly into your AI
+instead of sharing the link, copy whichever fits — [`prompts/plugin-from-idea.md`](prompts/plugin-from-idea.md)
+for prototype mode or [`prompts/plugin-as-project.md`](prompts/plugin-as-project.md)
+for project mode.
 
 ## For AIs
 
 If a user has sent you this repository's URL and asked you to help
-build a plugin for their MOD device, your full instructions are in
-[`prompts/plugin-from-idea.md`](prompts/plugin-from-idea.md). Fetch
-that file and follow its instructions.
+build a plugin for their MOD device, your instructions live in one
+of two prompt files depending on what they're trying to do:
 
-The short version: ask the user about their plugin idea (mono/stereo,
-what knobs, what it should sound like), propose a brand/name/category
-and parameter ranges for confirmation, then produce a single
-self-contained Buildroot `.mk` file with the DSP, LV2 metadata, and
-DPF framework wrapper all embedded inline. Use
-[`examples/gain.mk`](examples/gain.mk) as your reference pattern.
+- **For quick prototypes** (single `.mk` file, no git required) —
+  read [`prompts/plugin-from-idea.md`](prompts/plugin-from-idea.md).
+  Reference example: [`examples/gain.mk`](examples/gain.mk).
+- **For projects** (proper directory tree, git-hosted, iterable) —
+  read [`prompts/plugin-as-project.md`](prompts/plugin-as-project.md).
+  Reference example: [`projects/gain/`](projects/gain/).
+
+If the user hasn't specified, ask which fits. The project prompt
+also explains how to convert an existing prototype into a project,
+so if they bring a `.mk` they want to evolve, route them there.
 
 ## What's in this repo
 
 ```
 prompts/
-    plugin-from-idea.md   The community-distributable AI prompt.
-                          The detailed instructions for any AI a
-                          user sends here for help.
+    plugin-from-idea.md       The prompt for quick prototypes — one .mk file,
+                              source embedded inline.
+    plugin-as-project.md      The prompt for projects — proper directory tree,
+                              git-hosted, iterable. Handles the prototype-to-
+                              project conversion too.
 
 examples/
-    gain.mk               Canonical worked example — a 1-in / 1-out
-                          gain plugin with one knob. The structural
-                          template the prompt refers to. Validated
-                          end-to-end on the live builder.
+    gain.mk                   Canonical prototype example — 1-in / 1-out gain
+                              with one knob. The structural template that
+                              prompts/plugin-from-idea.md refers to.
 
-    ce2-chorus.mk         Boss CE-2-inspired chorus, contributed by
-                          Gianfranco Ceccolini. Demonstrates the
-                          patterns for time-based effects: circular
-                          delay buffer, sinusoidal LFO, fractional
-                          read interpolation, activate() resetting
-                          state on (re)start.
+    ce2-chorus.mk             Boss CE-2-inspired chorus, contributed by
+                              Gianfranco Ceccolini. Demonstrates time-based
+                              effects: circular delay buffer, LFO, fractional
+                              read interpolation, activate() resetting state.
 
-CONTRIBUTING.md           How to contribute a new recipe or improve
-                          an existing one.
-LICENSE                   MIT.
-README.md                 You are here.
+projects/
+    gain/                     Canonical project-mode example — same gain
+                              plugin restructured as a real directory tree
+                              with separate source, LV2 metadata, recipe.
+                              Used as the structural reference by
+                              prompts/plugin-as-project.md.
+
+CONTRIBUTING.md               How to contribute a new recipe or improve
+                              an existing one.
+LICENSE                       MIT.
+README.md                     You are here.
 ```
 
 ## Contributing
 
 New recipes and prompt improvements are welcome and the goal is for
 this to grow into a real collection over time. See
-[CONTRIBUTING.md](CONTRIBUTING.md) for how to add a recipe — the
-short version is: write your `.mk`, test it on a real MOD unit, open
-a PR.
+[CONTRIBUTING.md](CONTRIBUTING.md) for how to add a prototype recipe
+or a project example — the short version is: build it, test it on a
+real MOD unit, open a PR.
 
 ## License
 
@@ -93,5 +124,6 @@ Early days but the foundation is real. Validated end-to-end across
 multiple plugin shapes and AI providers: a gain plugin, a Tube
 Screamer overdrive, a CE-2-inspired chorus (all via Claude), and a
 one-knob bidirectional filter (via ChatGPT). The recipe pattern works
-across AIs and across DSP categories. Expect the collection to grow.
-Issues and PRs welcome.
+across AIs and across DSP categories. Project mode is newer and would
+benefit from real-world testing — try it, tell us what worked or
+didn't. Issues and PRs welcome.

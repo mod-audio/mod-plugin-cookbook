@@ -1,0 +1,35 @@
+@prefix doap:  <http://usefulinc.com/ns/doap#> .
+@prefix foaf:  <http://xmlns.com/foaf/0.1/> .
+@prefix lv2:   <http://lv2plug.in/ns/lv2core#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix units: <http://lv2plug.in/ns/extensions/units#> .
+
+<urn:mod-cookbook:gain-project>
+    a lv2:Plugin , lv2:AmplifierPlugin ;
+    doap:name "Gain" ;
+    doap:license <http://opensource.org/licenses/MIT> ;
+    doap:maintainer [
+        foaf:name "MOD" ;
+        foaf:homepage <https://mod.audio>
+    ] ;
+    rdfs:comment "Simple mono gain plugin, project-mode example." ;
+    lv2:port [
+        a lv2:InputPort , lv2:AudioPort ;
+        lv2:index 0 ;
+        lv2:symbol "in" ;
+        lv2:name "Audio In"
+    ] , [
+        a lv2:OutputPort , lv2:AudioPort ;
+        lv2:index 1 ;
+        lv2:symbol "out" ;
+        lv2:name "Audio Out"
+    ] , [
+        a lv2:InputPort , lv2:ControlPort ;
+        lv2:index 2 ;
+        lv2:symbol "gain" ;
+        lv2:name "Gain" ;
+        lv2:default 1.0 ;
+        lv2:minimum 0.0 ;
+        lv2:maximum 4.0 ;
+        units:unit units:coef
+    ] .
