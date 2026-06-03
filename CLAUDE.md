@@ -9,22 +9,74 @@ project evolves is in keeping with the cookbook's open spirit.
 
 `mod-plugin-cookbook` is a public collection of AI prompts and worked
 recipes that lets non-developers turn a sound-design idea into a
-working plugin for MOD devices. The flow:
+working plugin for devices in the MOD ecosystem. The flow:
 
 1. User sends an AI of their choice a link to this repo (or pastes
    the prompt content directly).
-2. AI reads `prompts/plugin-from-idea.md`, asks the user a few
-   structured questions, produces a single self-contained Buildroot
-   `.mk` file.
+2. AI reads `prompts/plugin-from-idea.md` (or `plugin-as-project.md`
+   for project-mode), asks the user a few structured questions,
+   produces either a single self-contained Buildroot `.mk` file
+   (path 1) or a small project tree pointed at by a thin `.mk`
+   (path 2).
 3. User uploads the `.mk` at
    [https://builder.mod.audio/buildroot](https://builder.mod.audio/buildroot)
-   with a MOD unit connected over USB. Plugin builds, installs, runs.
+   with a unit connected over USB. Plugin builds, installs, runs.
 
 The cookbook is the lighter-weight cousin of `mod-plugin-studio` (a
 separate private project): the studio is the upcoming successor to
-`mod-cloud-builder`; the cookbook works against the existing service
-and exists to validate "AI helps non-devs make plugins" as a real
-funnel into MOD's ecosystem.
+`mod-cloud-builder`; the cookbook works against the existing service.
+Both serve MOD's broader strategic role — see "Strategic context for
+the project" below.
+
+## Strategic context for the project
+
+Future sessions read this before making product decisions. Captured
+here so the cookbook's positioning stays consistent.
+
+**MOD's role in the ecosystem.** MOD's commercial business is selling
+two services to embedded-Linux audio device manufacturers: the
+Marketplace cloud infrastructure (for distributing plugins to users)
+and the Licensing API (a libmodla-based DRM system with trial/full
+modes that lets developers freely distribute plugins, with licenses
+generated server-side and tied to specific device hardware IDs). MBS
+— the Buildroot-based build kitchen — was sold to Darkglass during
+the Anagram deal; MOD cannot use it for new devices but Darkglass
+can. MOD's strategic moat is now the marketplace + licensing combo,
+which any embedded-Linux audio platform can buy as a service.
+
+**Cookbook's strategic role.** Open-source ecosystem investment, not
+a direct revenue product. More plugins → richer marketplace →
+stronger pitch when selling marketplace+licensing services to device
+manufacturers. The cookbook lowers the barrier to creating ecosystem-
+compatible plugins, which feeds the long-term moat. It also signals
+"MOD has a healthy, accessible developer story" to potential
+customers evaluating MOD as a platform partner.
+
+**Ecosystem framing, not MOD-device framing.** Plugins built via the
+cookbook target the shared LV2/DPF/mod-host foundation. They run on
+MOD's own devices (Dwarf/Duo/DuoX), on Darkglass Anagram, and on any
+future device built on the same Linux/JACK/mod-host stack (e.g. the
+Darkglass-Blackstar device under discussion). Cookbook language and
+positioning should reflect this — "MOD ecosystem," not "MOD device
+only." Plugins are portable across the ecosystem; that portability
+is part of what makes MOD's marketplace-as-a-service pitch
+compelling.
+
+**Relationship with Darkglass.** Darkglass is simultaneously: a
+current customer (uses MBS, may become a marketplace customer), a
+downstream platform (Anagram built on MOD's open-source stack), and
+the employer of falkTX (long-time MOD maintainer of mod-host, DPF,
+mod-plugin-builder). Their [Plugin-Dev-Setup repo](https://github.com/Darkglass-Electronics/Plugin-Dev-Setup)
+documents Anagram-specific developer concerns. Cross-linking is
+appropriate and mutual: their docs cover Anagram polish, the cookbook
+covers ecosystem creation. Neither subordinates the other.
+
+**MOD's distinct product surface inside the shared foundation.**
+modgui (the web-based pedal-face UI) is MOD's specifically — Anagram
+uses LVGL on its own screen. Investing in cookbook modgui templates
+is investing in MOD's product differentiation within the shared
+ecosystem. This is the planned next major piece of cookbook work
+(see open gaps).
 
 ## License
 
@@ -32,10 +84,10 @@ MIT throughout. We accept MIT-compatible contributions only. Be
 deliberate about adding any dependency or referenced library that
 isn't permissively licensed.
 
-## Strategic context
+## Strategic context — plugin funnel
 
-Gianfranco Ceccolini (founder, MOD Audio) frames the broader plugin
-growth funnel in four phases:
+Gianfranco Ceccolini (founder, MOD Audio) frames the plugin growth
+funnel in four phases:
 
 1. Devs build plugins locally.
 2. Devs share builds via persistent links.
@@ -45,6 +97,11 @@ growth funnel in four phases:
 The cookbook lives at the *entry* of that funnel — even before phase 1
 for many users. A non-dev with an idea uses the cookbook to produce a
 plugin, then upgrades into the existing funnel from there.
+
+The funnel feeds MOD's marketplace + licensing services (see
+"Strategic context for the project" above) — more plugins flowing
+through the funnel means more catalogue value when pitching marketplace
+services to device-manufacturer customers.
 
 ## Repo layout
 
@@ -171,13 +228,17 @@ log tells us what to fix before any community testing.
    design notes for MOD devices" section once we have the numbers.
 
 2. **modgui (custom pedal face) support.** The other community-asked
-   direction. Plan: a small library of well-designed pedal-face
-   templates that the AI selects from and customizes (rather than
-   generating CSS from scratch, which would be unreliable since the
-   AI can't see what it produces). Fits naturally into path 2 once
-   path 2 is validated — adds a `modgui/` subdirectory inside the
-   project. Single-`.mk` mode would be too cramped for modgui assets
-   so this stays project-mode only.
+   direction, *and* strategically MOD's specific product differentiator
+   inside the shared ecosystem — Anagram uses its own LVGL UI, modgui
+   is what makes MOD devices look like MOD devices on a screen. Plan:
+   a small library of well-designed pedal-face templates that the AI
+   selects from and customizes (rather than generating CSS from
+   scratch, which would be unreliable since the AI can't see what it
+   produces). Fits naturally into path 2 once path 2 is validated —
+   adds a `modgui/` subdirectory inside the project. Single-`.mk`
+   mode would be too cramped for modgui assets so this stays
+   project-mode only. Gianfranco has flagged this as the most
+   urgent next investment after path 2 hardware validation.
 
 3. **More example shapes still valuable.** Two prototype examples
    (gain, ce2-chorus) and one project example (gain) cover the

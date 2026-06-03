@@ -70,28 +70,26 @@ Plus, separately, the user's git repository URL gets baked into the
 
 ### Two delivery modes
 
-How you actually create the files depends on your runtime:
+How you produce the project files depends on what your runtime
+supports. The *when* is the same in both modes — files are written
+once, after the user's repo URL is settled (see the workflow
+section below). The *how* differs:
 
 **Mode A — filesystem-capable AIs** (Codex, Claude Code, Cowork,
-anything with shell or file-write tools).
-
-Create the files directly in the user's working directory. Don't
-ask permission for each file; just write them and tell the user
-what you did. Then walk them through the git steps. Use the
+anything with shell or file-write tools). Write the files directly
+into the user's working directory. Don't ask permission for each
+file; just write them and tell the user what was created. Use the
 example project at [`projects/gain/`](../projects/gain/) as your
-structural reference — fetch its files if you need to see the exact
-shape.
+structural reference — fetch its files if you need to see the
+exact shape.
 
-**Mode B — chat-only AIs** (Claude Chat, ChatGPT, Gemini, any other
-that can only produce text in the conversation).
-
-Produce each file as a separate fenced code block, in this order:
+**Mode B — chat-only AIs** (Claude Chat, ChatGPT, Gemini, any
+other that can only produce text in the conversation). Produce
+each file as a separate fenced code block, in this order:
 README.md, LICENSE, .gitignore, plugin/Plugin.cpp,
 plugin/DistrhoPluginInfo.h, plugin/Makefile, lv2/manifest.ttl,
-lv2/plugin.ttl, recipe/<plugin-name>.mk. Above each block, name the
-exact path the user should save it to. Below the last block, give
-the bash commands the user can run to set up the directory and
-push to GitHub (or wherever they're hosting).
+lv2/plugin.ttl, recipe/<plugin-name>.mk. Above each block, name
+the exact path the user should save it to.
 
 Detect which mode you're in based on what tools you have available.
 If unclear, ask the user briefly: *"Are you working with me in a
@@ -99,36 +97,24 @@ tool that gives me filesystem access (Codex / Claude Code /
 Cowork), or in a regular chat? It affects how I'll hand you the
 project files."*
 
-### GitHub onboarding (and the git-agnostic case)
+### Hosting facts to know (referenced from the workflow below)
 
-Most users will host on GitHub. Walk them through:
-
-1. Create a GitHub account at <https://github.com> if they don't
-   have one. (Free for public repos.)
-2. Create a new empty repository — name it after the plugin
-   (lowercase with dashes is the convention, matching the bundle
-   name). Public is fine; private also works as long as it stays
-   accessible to the build farm — see "Private repos" below.
-3. In their local plugin directory, run:
-   ```
-   git init -b main
-   git add .
-   git commit -m "Initial plugin scaffold"
-   git remote add origin git@github.com:<their-user>/<plugin-name>.git
-   git push -u origin main
-   ```
-4. Update the `_SITE` line in `recipe/<plugin-name>.mk` to point at
-   the new GitHub URL.
-
-If the user prefers GitLab, Codeberg, a self-hosted git server, or
-anything else, the workflow is identical — only the `_SITE` URL
-changes. The cookbook doesn't care where the repo lives, as long
-as the build farm can reach it over HTTPS or SSH.
-
-**Private repos.** If the user wants their plugin source private,
-the MOD builder needs read access. For GitHub private repos that
-typically means adding a deploy key. Don't get into the details
-unless the user asks — most first-time projects start public.
+- **GitHub is the default** because that's where the community is and
+  it's free for public repos. The interactive walkthrough lives in the
+  "How to interact with the user" section below.
+- **Any reachable git URL works.** GitLab, Codeberg, self-hosted Gitea,
+  whatever — the cookbook doesn't care. Same flow, only the `_SITE`
+  URL changes.
+- **Private repos work in principle** but the MOD build farm needs
+  read access, which on GitHub means adding a deploy key. That's
+  beyond what most users want to deal with on their first project,
+  so default to public and only mention the private-repo path if the
+  user explicitly asks.
+- **The empty repo must be truly empty.** When the user creates the
+  repo on GitHub, they should leave all the "Initialize with…"
+  checkboxes unchecked. README, LICENSE, .gitignore — we're providing
+  those; if GitHub also adds them, the first `git push` will reject
+  due to non-fast-forward.
 
 ### The recipe (.mk) shape
 
@@ -217,65 +203,160 @@ for the exact shape. Key constraints:
 
 ### The graduation workflow (path 1 → path 2)
 
-If the user comes in saying *"I prototyped this with the cookbook,
-here's the `.mk` — turn it into a project,"* your job is to extract
-the source from the prototype's `define ... endef` blocks and write
-it out as normal files. The mapping:
+Many users will arrive at this prompt with just a `.mk` file from a
+previous prototype session and no surviving conversation context.
+That's fine — the prototype `.mk` is self-contained by design, and
+everything you need is in its `define ... endef` blocks. The user
+doesn't need to remember or share their original AI conversation.
 
-| Define block            | Project file                       |
-|-------------------------|------------------------------------|
-| `*_PLUGIN_CPP`          | `plugin/Plugin.cpp`                |
-| `*_PLUGIN_INFO_H`       | `plugin/DistrhoPluginInfo.h`       |
-| `*_PLUGIN_MAKEFILE`     | `plugin/Makefile` (regenerate, since the project version differs slightly — uses `dpf/Makefile.plugins.mk` instead of `../../Makefile.plugins.mk`) |
-| `*_MANIFEST_TTL`        | `lv2/manifest.ttl`                 |
-| `*_PLUGIN_TTL`          | `lv2/<bundle-name>.ttl` (the project layout names this after the bundle, not generic) |
+**What you ask the user for:** just the `.mk` file. They can paste
+its contents directly into the conversation, attach it as a file (if
+the AI supports attachments), or share it via a gist or pastebin
+link. Any of those works.
 
-The prototype's recipe gets replaced entirely by a fresh
-project-mode recipe pointing at the user's new git repo.
+**What you extract from it:**
 
-When graduating: ask the user what bundle name to keep (default:
-whatever the prototype had), what git host they'll use (default:
-GitHub), and proceed.
+| Source in the `.mk`                | What you derive                                    |
+|------------------------------------|----------------------------------------------------|
+| `<PREFIX>_BUNDLES = X.lv2`         | The bundle name `X` and the make-variable prefix    |
+| `*_PLUGIN_CPP` define block        | The DSP code → `plugin/Plugin.cpp`                  |
+| `*_PLUGIN_INFO_H` define block     | The plugin config → `plugin/DistrhoPluginInfo.h`    |
+| `DISTRHO_PLUGIN_BRAND/NAME/URI` inside that block | Brand, plugin name, LV2 URI               |
+| Parameter enum + `initParameter` cases in the C++ | Parameter list, ranges, defaults          |
+| `DISTRHO_PLUGIN_NUM_INPUTS/OUTPUTS` | Channel count (mono/stereo)                        |
+| `*_MANIFEST_TTL` define block      | The manifest → `lv2/manifest.ttl`                  |
+| `*_PLUGIN_TTL` define block        | The plugin description → `lv2/<bundle-name>.ttl`   |
+
+**What you regenerate from scratch:**
+
+- The plugin `Makefile`: the prototype's version uses
+  `include ../../Makefile.plugins.mk` (because the plugin lived
+  inside DPF's `examples/` directory at build time). The project
+  version uses `include dpf/Makefile.plugins.mk` with DPF symlinked
+  in by the recipe. Always rewrite this one.
+- The `.mk` recipe: replaced entirely by a project-mode recipe
+  pointing at the user's new repo URL. No embedded source anymore.
+- `README.md`, `LICENSE`, `.gitignore`: fresh project-level files.
+
+**Brief confirmation pass with the user before producing anything:**
+
+> *"Got it — this is the [name] plugin, [N] in / [N] out, with [these
+> knobs]. I'll keep everything the same and structure it as a project
+> you can iterate on. Anything you want to change while we're at it?
+> (Rename it, change the brand, adjust a knob range…)"*
+
+Then proceed with the regular workflow below.
 
 ### How to interact with the user
 
-**Step 1 — Confirm the concept.** One sentence, same as in prototype
-mode. ("A tape-saturation distortion as a proper project — got it.")
+The workflow is designed so that the recipe is correct the first
+time it's written — the user's repo URL is settled before any
+files are produced, so the `_SITE` line is right from the start.
+No after-the-fact edits.
 
-**Step 2 — Confirm or ask the small set of things you need to know:**
+**Step 1 — Understand the entry point.** Two common cases:
 
-- **Plugin name** (label on the unit) and **bundle name** (lowercase
-  + dashes, for the file/directory names).
-- **Maker / brand** — default suggestion, offer their own as an
-  alternative.
-- **LV2 category** — same list as the prototype prompt.
-- **Channel count** — mono / stereo.
-- **Knobs** — name, range, default, unit per parameter.
-- **Where they'll host the repo** — GitHub by default.
-- **Local working directory** — if you're in filesystem-mode, where
-  to create the project.
+- *Starting from an idea.* User describes a plugin in plain
+  language. Continue with Step 2.
+- *Graduating an existing prototype.* User pastes a `.mk` file
+  (or links to one) and asks to turn it into a project. Run the
+  graduation confirmation from the section above, then skip
+  Step 2 (the design is already settled) and continue at Step 3.
 
-If their request is already specific enough (named reference plugin,
-graduation from an existing prototype), skip the explicit confirm
-pass and proceed directly with brief design notes.
+**Step 2 — Discuss the plugin design.** Same propose-or-proceed
+pass as in the prototype prompt. Confirm the concept, propose the
+plugin name, brand (offer the user's own as an option), LV2
+category, channel count, and knob ranges in one short message,
+invite adjustments. If the user's request is already specific,
+proceed directly with brief design notes. **Don't write any files
+yet** — design first, infrastructure second.
 
-**Step 3 — Produce the project files.** Either by writing to disk
-(Mode A) or as a series of named fenced code blocks (Mode B). Use
-the project structure described above. Reference the canonical
-example at [`projects/gain/`](../projects/gain/) for exact shapes.
+**Step 3 — Set up the git host.** Path 2 needs a reachable git URL
+in the recipe's `_SITE` line; there's no way around it. Walk the
+user through this:
 
-**Step 4 — Walk through the git setup.** Show the exact commands to
-`git init`, commit, create the GitHub repo, push, and update the
-`_SITE` line in the recipe. If the user already has a repo prepared
-(graduation case, or they set it up before this), just show the
-commit-and-push commands.
+> *"Path 2 needs a git host so the build farm can fetch your code.
+> The easiest is GitHub — free for public repos, works with
+> everyone. Do you have a GitHub account already, or shall I walk
+> you through it? If you'd rather use GitLab, Codeberg, or
+> somewhere else, that's fine too — same flow, just a different
+> URL."*
 
-**Step 5 — Tell the user the final loop.** They take
+If they need a GitHub account, point them at <https://github.com>
+to sign up (free, takes a minute).
+
+Walk them through creating an empty repository:
+
+1. Sign in to GitHub. Click the **+** icon in the top-right →
+   **New repository**.
+2. Name it `<plugin-bundle-name>` (the same lowercase-with-dashes
+   form you'll use for the `.mk` filename).
+3. **Public** is fine for most cases. Private repos work too but
+   the build farm needs a deploy key to read from them — skip the
+   complexity unless the user specifically wants their plugin
+   source kept private.
+4. **Leave all the "initialize with…" checkboxes UNCHECKED.** No
+   README, no .gitignore, no LICENSE — we're providing all of
+   those, and an auto-initialized repo would conflict on push.
+5. Click **Create repository**.
+
+**Ask the user to paste the new repo's URL back to you.** Either
+the HTTPS form (`https://github.com/<user>/<plugin>.git`) or the
+SSH form (`git@github.com:<user>/<plugin>.git`) works for the
+recipe's `_SITE` and for the local `git remote add`.
+
+If the user already has a repo ready (existing project, or they
+set one up before this conversation), just ask for the URL.
+
+**Step 4 — Produce the project files.** With the URL in hand,
+generate all files. The recipe's `_SITE` is baked in correctly
+from the start — no later edits needed.
+
+- *Mode A (filesystem-capable AIs).* Pick or confirm a working
+  directory (`./` is usually fine, or ask if unclear), then write
+  every file. Tell the user what was created.
+- *Mode B (chat-only AIs).* Produce each file as a separate fenced
+  code block with the exact path above it (e.g. `### plugin/Plugin.cpp`
+  followed by the block). Order them logically so the user can
+  save them top-to-bottom.
+
+After producing the files, list them once so the user can verify
+everything's in place.
+
+**Step 5 — First commit and push.** Show the exact commands. From
+inside the project directory:
+
+```
+git init -b main
+git add .
+git commit -m "Initial scaffold"
+git remote add origin <the-url-they-gave-you>
+git push -u origin main
+```
+
+For Mode A, you can offer to run these via the AI's shell if it
+has one — but check first that the user's git credentials are
+configured (SSH key or HTTPS auth), otherwise the push will fail
+silently or prompt for a password in a context the AI can't
+handle. For Mode B, the user runs these in their terminal.
+
+**Step 6 — Tell the user the build loop.** They take
 `recipe/<plugin-name>.mk` and upload it at
 [`https://builder.mod.audio/buildroot`](https://builder.mod.audio/buildroot)
-with their MOD unit connected over USB. When they later edit and
-push, they update `_VERSION` in the recipe to the new commit and
-re-upload.
+with their MOD unit connected over USB. Build, install, done.
+
+For future iterations (editing the plugin):
+
+1. Edit `plugin/Plugin.cpp` (or any other file).
+2. `git add . && git commit -m "what changed" && git push`.
+3. Get the new commit SHA: `git rev-parse HEAD`.
+4. Update the `_VERSION = <sha>` line in `recipe/<plugin>.mk`.
+5. Re-upload the `.mk` at builder.mod.audio.
+
+Mention that pinning `_VERSION` to a specific SHA gives
+reproducible builds. Pointing it at a branch name (like `main`)
+also works — every build then uses the latest commit on that
+branch.
 
 ### Pre-flight checklist before handing back
 
