@@ -180,6 +180,23 @@ Specifically don't do without strong new evidence:
 - Branch the README into multiple paths.
 - Introduce decisions the user didn't ask the AI to make.
 
+A related cleanup was made immediately after the rollback: the README's
+"Related projects in the ecosystem" section pointing at the Darkglass
+Plugin-Dev-Setup repo was also removed, along with the explicit
+Darkglass-Anagram mention in the opening paragraph. The reasoning:
+the cookbook's audience is non-coders with sound-design ideas; pointing
+them at a porting-and-build-environment doc is irrelevant or
+confusing. The ecosystem story can live in MOD's broader docs and
+sales material; the cookbook should serve cookbook users. The
+Darkglass relationship and strategic positioning still belong in this
+file's "Strategic context" section above (internal session continuity
+needs them), but they don't belong in the public README.
+
+Specifically also don't do without strong new evidence:
+- Re-add cross-links to partner platforms in the public README.
+- Reframe the cookbook around an "ecosystem" pitch rather than the
+  direct "describe an idea, get a plugin" pitch.
+
 ## Current state (last updated 2026-06-10)
 
 **Path 1 validated, shipped to the community, working well.**

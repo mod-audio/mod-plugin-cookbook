@@ -1,16 +1,10 @@
 # MOD Plugin Cookbook
 
-Turn a sound-design idea into a working plugin for devices in the
-[MOD ecosystem](https://mod.audio), without writing C++ or learning
+Turn a sound-design idea into a working plugin for
+[MOD devices](https://mod.audio), without writing C++ or learning
 Buildroot. You describe the plugin you want in plain language; an AI
-of your choice writes the build recipe; you upload it; your unit
+of your choice writes the build recipe; you upload it; your MOD unit
 runs your plugin.
-
-Plugins built via this cookbook target the shared LV2/DPF foundation
-that powers MOD's own devices (Dwarf, Duo, DuoX) as well as related
-platforms built on the same Linux/JACK/`mod-host` stack — Darkglass
-Anagram being one current example. The same `.mk` you generate here
-builds for all of them.
 
 ## For humans
 
@@ -99,14 +93,3 @@ one-knob bidirectional filter (via ChatGPT). The recipe pattern works
 across AIs and across DSP categories. Posted to
 [forum.mod.audio](https://forum.mod.audio) and gathered real
 community use — feedback welcome via issues and PRs.
-
-## Related projects in the ecosystem
-
-If you're an experienced plugin developer targeting **Darkglass Anagram**
-specifically, the [Darkglass Plugin-Dev-Setup](https://github.com/Darkglass-Electronics/Plugin-Dev-Setup)
-documents that platform's conventions — block-image styling, the
-Anagram-specific LV2 metadata, JUCE-on-Anagram via their custom LV2
-wrapper, on-device deploy. It's the right home for serious porting
-work and Anagram-native polish. This cookbook focuses on AI-assisted
-creation against the shared LV2/DPF foundation that all MOD-ecosystem
-devices share.
