@@ -13,20 +13,16 @@ working plugin for devices in the MOD ecosystem. The flow:
 
 1. User sends an AI of their choice a link to this repo (or pastes
    the prompt content directly).
-2. AI reads `prompts/plugin-from-idea.md` (or `plugin-as-project.md`
-   for project-mode), asks the user a few structured questions,
-   produces either a single self-contained Buildroot `.mk` file
-   (path 1) or a small project tree pointed at by a thin `.mk`
-   (path 2).
+2. AI reads `prompts/plugin-from-idea.md`, asks the user a few
+   structured questions, produces a single self-contained Buildroot
+   `.mk` file.
 3. User uploads the `.mk` at
    [https://builder.mod.audio/buildroot](https://builder.mod.audio/buildroot)
    with a unit connected over USB. Plugin builds, installs, runs.
 
-The cookbook is the lighter-weight cousin of `mod-plugin-studio` (a
-separate private project): the studio is the upcoming successor to
-`mod-cloud-builder`; the cookbook works against the existing service.
-Both serve MOD's broader strategic role — see "Strategic context for
-the project" below.
+The cookbook is intentionally narrow: one prompt, one deliverable
+shape, one excellent path. Both serve MOD's broader strategic role —
+see "Strategic context for the project" below.
 
 ## Strategic context for the project
 
@@ -78,12 +74,6 @@ is investing in MOD's product differentiation within the shared
 ecosystem. This is the planned next major piece of cookbook work
 (see open gaps).
 
-## License
-
-MIT throughout. We accept MIT-compatible contributions only. Be
-deliberate about adding any dependency or referenced library that
-isn't permissively licensed.
-
 ## Strategic context — plugin funnel
 
 Gianfranco Ceccolini (founder, MOD Audio) frames the plugin growth
@@ -103,157 +93,148 @@ The funnel feeds MOD's marketplace + licensing services (see
 through the funnel means more catalogue value when pitching marketplace
 services to device-manufacturer customers.
 
+## License
+
+MIT throughout. We accept MIT-compatible contributions only. Be
+deliberate about adding any dependency or referenced library that
+isn't permissively licensed.
+
 ## Repo layout
 
 ```
-README.md                Dual-audience entry point. Describes the
-                         two paths and routes humans / AIs to the
-                         right prompt.
+README.md                Dual-audience entry point (humans + AIs).
 LICENSE                  MIT.
-CONTRIBUTING.md          How community members add recipes and
-                         project examples.
+CONTRIBUTING.md          How community members add recipes.
 CLAUDE.md                This file. Session continuity.
 prompts/
-    plugin-from-idea.md  Path 1 — quick prototype, single .mk file
-                         with embedded source.
-    plugin-as-project.md Path 2 — proper project, git-hosted, with
-                         the prototype-to-project graduation flow.
+    plugin-from-idea.md  The AI prompt for "idea -> .mk file".
 examples/
-    gain.mk              Path 1 canonical example. Validated on
+    gain.mk              Canonical worked example, validated on
                          real hardware.
-    ce2-chorus.mk        Path 1 example contributed by Gianfranco,
+    ce2-chorus.mk        Contributed example by Gianfranco;
                          demonstrates time-based DSP.
-projects/
-    gain/                Path 2 canonical example. Same gain plugin
-                         as examples/gain.mk but structured as a
-                         real project tree. Recipe points at the
-                         cookbook repo itself as its _SITE so the
-                         demo is a working buildable demo.
 ```
 
 ## Decisions locked in
 
 - **One canonical entry point** — the repo root README. Both humans
-  and AIs land there; the README routes them to the right prompt
-  based on which path fits.
-- **Two paths, sharply distinguished** — path 1 (prototype) is one
-  embedded-source `.mk`; path 2 (project) is a proper directory
-  tree pointed at by a thin `.mk`. Path 2 explicitly supports
-  graduating a path 1 prototype into a project.
-- **AI-agnostic prompts** — both prompts work with any AI that can
-  fetch URLs and produce text. The path 2 prompt has two delivery
-  modes built in: Mode A (filesystem-capable AIs like Codex /
-  Claude Code / Cowork — AI writes files directly) and Mode B
-  (chat-only AIs — AI gives code blocks the user saves manually).
-- **GitHub-first, git-agnostic** — the path 2 prompt walks users
-  through GitHub since that's where the community is, but the
-  recipe's `_SITE` accepts any reachable git URL (GitLab, Codeberg,
-  self-hosted).
+  and AIs land there; the README directs each appropriately.
+- **One canonical workflow.** A single prompt, one deliverable
+  shape, deliberately narrow scope. Earlier work added a project-
+  mode workflow alongside the prototype one; it confused the AIs by
+  giving them a choice the user hadn't asked for, and was rolled
+  back. See "Path-2 rollback" below.
+- **AI-agnostic prompts** — the prompt works with any AI that can
+  fetch URLs and produce text (Claude, ChatGPT, Gemini, others). No
+  tool-use requirements.
+- **Embedded source pattern** — every recipe embeds its DSP code
+  and LV2 metadata inline in the `.mk` file via `define ... endef`
+  make variables exported into the shell environment. No external
+  git repos other than DPF.
 - **DPF as the framework** — every plugin in the cookbook is
   DPF-based. Already on the build container, already used by all
   existing MOD skeletons, abstracts most LV2 complexity into one
   `Plugin` subclass.
 - **Hand-written LV2 TTL files** — DPF's `lv2_ttl_generator` cannot
-  run cross-compiled to ARM in the MOD builder image. Both paths
-  hand-write `manifest.ttl` and `<bundle>.ttl`. The same constraint
-  applies in both paths.
-- **Embedded source pattern (path 1)** — prototype recipes embed
-  DSP code and LV2 metadata inline via `define ... endef` make
-  variables exported into the shell environment.
-- **Repo-pointing pattern (path 2)** — project recipes point at the
-  user's git repo via `_SITE`. The `recipe/<plugin>.mk` file is
-  ~25 lines, no heredoc nesting.
+  run cross-compiled to ARM in the MOD builder image. Recipes
+  hand-write `manifest.ttl` and `<bundle>.ttl` rather than relying
+  on DPF's generator.
 - **`urn:mod-cookbook:<bundle>` LV2 URI convention** — for plugins
-  produced via the cookbook prompts. Users with their own brand can
+  produced via the cookbook prompt. Users with their own brand can
   use their own URI scheme.
 - **`MOD Cookbook` as default brand** — but the prompt *explicitly*
   offers the user the option to use their own name or alias if
   they're publishing under their own brand. This matters for
   community ownership.
 
-## Current state (last updated 2026-06-02)
+## Path-2 rollback (recorded for continuity)
 
-**Path 1 validated and shipped to the community**
+A "project mode" workflow was added in a previous iteration — a
+second prompt (`plugin-as-project.md`) and a directory-tree example
+(`projects/gain/`) that produced a small repo the user would host on
+git rather than a single embedded `.mk`. The intent was to support
+iteration, multi-file DSP, external dependencies, and eventually a
+modgui pedal face — all of which the single-file path can't do
+well.
 
-- Path 1 cookbook was posted to [forum.mod.audio](https://forum.mod.audio).
-  Reception was good. Non-coders particularly enjoyed the "pull a
-  plugin out of thin air" experience.
+After posting the path-1 cookbook to forum.mod.audio and seeing real
+community use, Gianfranco observed that adding path 2 made the
+cookbook *worse overall*:
+
+- AIs reading the README saw two options and had to choose.
+- They sometimes routed users into the project workflow (asking
+  about GitHub, repo URLs, file trees) when the user just wanted a
+  quick `.mk` from a description.
+- The "ask first which path" friction reduced the lean,
+  send-link-get-result UX that had been working well.
+
+We rolled back to path-1-only as the public surface. Files were
+deleted; git history preserves the work. Rationale, in case we
+revisit: the cookbook's strength is being a single-purpose tool. If
+project-mode work matters in the future, it probably belongs in a
+separate repo or in `mod-plugin-studio` rather than expanding the
+cookbook's scope.
+
+Specifically don't do without strong new evidence:
+- Add a second prompt that an AI might choose between.
+- Branch the README into multiple paths.
+- Introduce decisions the user didn't ask the AI to make.
+
+## Current state (last updated 2026-06-10)
+
+**Path 1 validated, shipped to the community, working well.**
+
+- Cookbook is live and announced on forum.mod.audio. Reception was
+  positive; non-coders particularly enjoy the "pull a plugin out of
+  thin air" experience.
 - Validated end-to-end with four plugins built and installed on a
-  Dwarf, across Claude and ChatGPT: gain (`examples/gain.mk`),
-  tube screamer (Claude Chat, one-line prompt), CE-2 chorus
+  Dwarf, across Claude and ChatGPT: gain (`examples/gain.mk`), tube
+  screamer (Claude Chat, one-line prompt), CE-2 chorus
   (`examples/ce2-chorus.mk`, contributed by Gianfranco), and a
   one-knob bidirectional filter (ChatGPT).
-- ChatGPT initially planned to produce a regular LV2 source tree but
-  corrected itself after reading the cookbook — meaningful evidence
-  that the docs are doing real work.
-
-**Path 2 built, awaiting hardware validation**
-
-After community feedback identified two natural next directions
-(custom UI / modgui and project / collaboration mode), Gianfranco
-chose project mode first — cramming UI into the single-`.mk` pattern
-would be a nightmare, and project mode is the architectural
-foundation that eventually unlocks modgui anyway.
-
-Path 2 is now in place:
-- `prompts/plugin-as-project.md` — the project-mode prompt. Handles
-  filesystem-capable AIs (Codex / Claude Code / Cowork) writing
-  files directly, and chat-only AIs (Claude Chat / ChatGPT / Gemini)
-  producing code blocks for the user to save. Includes a graduation
-  workflow for converting a path 1 prototype to a path 2 project.
-- `projects/gain/` — the canonical project-mode example, same DSP
-  as `examples/gain.mk` but restructured as a real directory tree.
-  The recipe points at the cookbook repo itself, so the demo is
-  buildable directly from the cookbook.
-- README updated to route between paths.
-- CONTRIBUTING updated to cover project-mode contributions.
-
-**Immediate next step: validate path 2 on real hardware.**
-Upload `projects/gain/recipe/gain.mk` at builder.mod.audio with a
-MOD unit connected. Confirm: build succeeds, plugin installs,
-behaves identically to `examples/gain.mk`. If something fails, the
-log tells us what to fix before any community testing.
+- Strategic framing is in place: README and CLAUDE.md describe the
+  cookbook as ecosystem-positioned, cross-linked to Darkglass's
+  Plugin-Dev-Setup as the right home for Anagram-specific developer
+  work.
 
 **Open gaps tracked here, in rough priority order**
 
 1. **MOD device signal-level guidance.** Still the biggest known
-   content gap. The prompts have no information about what dBFS
+   content gap. The prompt has no information about what dBFS
    represents in practice at a MOD unit's input. Saturation,
    distortion, dynamics, level-meter, compressor, and anything where
    absolute signal level matters all need this. Gain pedals don't
    care. Asked Gianfranco for the actual numbers (nominal instrument
    level, line-vs-instrument distinction, headroom convention for
    output, whether it differs across Dwarf / Duo / DuoX / Anagram);
-   he doesn't have them at hand yet. Add to the prompts as a "DSP
-   design notes for MOD devices" section once we have the numbers.
+   he doesn't have them at hand yet. The Darkglass docs give the
+   Anagram number (0 dBFS = 3.119 Vrms = 12.1 dBu) — MOD-device
+   numbers still pending. Add to the prompt as a "DSP design notes
+   for MOD devices" section once we have the numbers.
 
-2. **modgui (custom pedal face) support.** The other community-asked
-   direction, *and* strategically MOD's specific product differentiator
-   inside the shared ecosystem — Anagram uses its own LVGL UI, modgui
-   is what makes MOD devices look like MOD devices on a screen. Plan:
-   a small library of well-designed pedal-face templates that the AI
-   selects from and customizes (rather than generating CSS from
-   scratch, which would be unreliable since the AI can't see what it
-   produces). Fits naturally into path 2 once path 2 is validated —
-   adds a `modgui/` subdirectory inside the project. Single-`.mk`
-   mode would be too cramped for modgui assets so this stays
-   project-mode only. Gianfranco has flagged this as the most
-   urgent next investment after path 2 hardware validation.
+2. **modgui (custom pedal face) support.** Strategically MOD's
+   specific product differentiator inside the shared ecosystem —
+   Anagram uses its own LVGL UI, modgui is what makes MOD devices
+   look like MOD devices on a screen. Tricky problem: an AI can't
+   see what its generated CSS produces, so improvising pedal faces
+   is unreliable. Plan: a small library of well-designed pedal-face
+   templates the AI selects from and customizes (knob labels,
+   parameter mapping) rather than generating from scratch. Open
+   design question, given the path-2 rollback: where does modgui
+   live if not in a project? Possible answers — heavier `.mk`
+   recipes that embed the modgui HTML/CSS too (size-limited but
+   workable for templated assets), or modgui as a feature of the
+   future `mod-plugin-studio` rather than the cookbook. Not yet
+   decided.
 
-3. **More example shapes still valuable.** Two prototype examples
-   (gain, ce2-chorus) and one project example (gain) cover the
-   basics. Future additions that would teach the AI new patterns: a
-   one-pole filter (covers filter coefficient math), a stereo plugin
-   (covers multi-channel processing), an envelope follower / dynamics
-   plugin (covers per-sample envelope tracking and gain reduction).
-   The centre-filter from ChatGPT could be polished into an example
-   if Gianfranco wants to attribute it to himself.
-
-4. **Path 2 validation in the community.** Once we've confirmed
-   `projects/gain/` builds on real hardware, the path 2 announcement
-   should be a separate, smaller forum post (or addition to the
-   original one). Same kind of "try it and tell us what worked"
-   framing as path 1's launch.
+3. **More example shapes still valuable.** Two examples (gain,
+   ce2-chorus) cover callback-only and delay-based DSP. Future
+   additions that would teach the AI new patterns: a one-pole
+   filter (covers filter coefficient math), a stereo plugin
+   (covers multi-channel processing), an envelope follower /
+   dynamics plugin (covers per-sample envelope tracking and gain
+   reduction). The centre-filter from ChatGPT could be polished
+   into an example if Gianfranco wants to attribute it to himself.
 
 ## Working rhythm
 
@@ -266,6 +247,6 @@ log tells us what to fix before any community testing.
   bundle multiple features into one PR.
 - The "Current state" section above is overwritten, not appended to,
   so this file doesn't drift into a chat log.
-- When a "Open gap" gets resolved, move it out of the list and into
+- When an "Open gap" gets resolved, move it out of the list and into
   the historical record, or just delete it if it's no longer
   relevant. The list should always reflect what's actually open.
